@@ -1,0 +1,5 @@
+{
+  "name": "SpriteMaster - 精灵图处理工具",
+  "description": "专业的游戏精灵图预览与压缩工具，支持动作预览、背景去除及智能压缩。",
+  "requestFramePermissions": []
+}
