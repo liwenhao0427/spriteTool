@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { ActionType, DEFAULT_CONFIG } from '../types';
 
 interface OffsetEditorProps {
@@ -6,6 +6,8 @@ interface OffsetEditorProps {
   selectedAction: ActionType;
   offsets: { x: number; y: number }[];
   onOffsetChange: (frameIndex: number, axis: 'x' | 'y', value: number) => void;
+  selectedFrame: number;
+  onFrameSelect: (index: number) => void;
 }
 
 const OffsetEditor: React.FC<OffsetEditorProps> = ({
@@ -13,19 +15,15 @@ const OffsetEditor: React.FC<OffsetEditorProps> = ({
   selectedAction,
   offsets,
   onOffsetChange,
+  selectedFrame,
+  onFrameSelect,
 }) => {
-  const [selectedFrame, setSelectedFrame] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { colCount, rowCount, actionMap } = DEFAULT_CONFIG;
   const frameWidth = image.width / colCount;
   const frameHeight = image.height / rowCount;
   const actionData = actionMap[selectedAction];
-
-  // 当动作改变时，重置选中帧为第一帧
-  useEffect(() => {
-    setSelectedFrame(0);
-  }, [selectedAction]);
 
   // 绘制带有高亮的画布
   useEffect(() => {
@@ -82,7 +80,7 @@ const OffsetEditor: React.FC<OffsetEditorProps> = ({
     const clickedRow = Math.floor(y / frameHeight);
 
     if (clickedRow === actionData.row && clickedCol < actionData.frames) {
-        setSelectedFrame(clickedCol);
+        onFrameSelect(clickedCol);
     }
   };
 

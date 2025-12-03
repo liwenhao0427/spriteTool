@@ -25,8 +25,8 @@ export const DEFAULT_CONFIG: SpriteConfig = {
   colCount: 5, // Based on the max frames (Attack)
   actionMap: {
     [ActionType.Idle]: { row: 0, frames: 4 },
-    [ActionType.Hit]: { row: 1, frames: 1 },
+    [ActionType.Hit]: { row: 3, frames: 1 }, // 原第二行 -> 改为第四行
     [ActionType.Walk]: { row: 2, frames: 4 },
-    [ActionType.Attack]: { row: 3, frames: 5 },
+    [ActionType.Attack]: { row: 1, frames: 5 }, // 原第四行 -> 改为第二行
   },
 };

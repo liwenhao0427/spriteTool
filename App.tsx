@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActionType, DEFAULT_CONFIG } from './types';
 import SpritePreview from './components/SpritePreview';
 import { loadImage, processSpriteSheet } from './utils/imageProcessing';
@@ -9,6 +9,7 @@ const App: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [selectedAction, setSelectedAction] = useState<ActionType>(ActionType.Idle);
+  const [selectedFrame, setSelectedFrame] = useState<number>(0);
   
   // Settings
   const [originalFrameSize, setOriginalFrameSize] = useState<{ w: number, h: number } | null>(null);
@@ -16,13 +17,18 @@ const App: React.FC = () => {
   const [tolerance, setTolerance] = useState<number>(10);
   const [autoBgColor, setAutoBgColor] = useState<{r:number, g:number, b:number} | null>(null);
   const [offsets, setOffsets] = useState<Record<string, { x: number, y: number }[]>>({});
-  const [removalMode, setRemovalMode] = useState<'edge' | 'color'>('edge');
+  const [removalMode, setRemovalMode] = useState<'edge' | 'color'>('color');
 
 
   // Processing State
   const [isProcessing, setIsProcessing] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [processedSize, setProcessedSize] = useState<number>(0);
+
+  // 当动作变化时，重置选中帧
+  useEffect(() => {
+    setSelectedFrame(0);
+  }, [selectedAction]);
 
   // Handle File Upload
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,11 +197,11 @@ const App: React.FC = () => {
                     <div className="flex items-center space-x-4">
                         <label className="flex items-center cursor-pointer">
                             <input type="radio" name="removalMode" value="edge" checked={removalMode === 'edge'} onChange={() => setRemovalMode('edge')} className="h-4 w-4 text-purple-600 border-gray-300 focus:ring-purple-500"/>
-                            <span className="ml-2 text-sm text-slate-600">描边去背 (推荐)</span>
+                            <span className="ml-2 text-sm text-slate-600">描边去背</span>
                         </label>
                         <label className="flex items-center cursor-pointer">
                             <input type="radio" name="removalMode" value="color" checked={removalMode === 'color'} onChange={() => setRemovalMode('color')} className="h-4 w-4 text-purple-600 border-gray-300 focus:ring-purple-500"/>
-                            <span className="ml-2 text-sm text-slate-600">颜色去背</span>
+                            <span className="ml-2 text-sm text-slate-600">颜色去背 (推荐)</span>
                         </label>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">描边模式能防止误删与背景同色的主体部分。</p>
@@ -229,6 +235,8 @@ const App: React.FC = () => {
                             selectedAction={selectedAction}
                             offsets={offsets[selectedAction] || []}
                             onOffsetChange={handleOffsetChange}
+                            selectedFrame={selectedFrame}
+                            onFrameSelect={setSelectedFrame}
                         />
                         <p className="text-xs text-slate-400 mt-2">点击上方精灵图中的一帧进行偏移调整。</p>
                     </div>
@@ -260,7 +268,7 @@ const App: React.FC = () => {
                      </p>
                      <a 
                         href={downloadUrl}
-                        download="processed_sprite.png"
+                        download={`processed_sprite_${targetSize.w}x${targetSize.h}.png`}
                         className="block w-full text-center py-2 px-4 border-2 border-green-500 text-green-600 rounded-lg hover:bg-green-50 font-semibold transition-colors"
                      >
                         ⬇️ 下载处理后的精灵图
@@ -298,7 +306,7 @@ const App: React.FC = () => {
                          <div className="text-center text-slate-400">
                             <div className="text-6xl mb-4">🖼️</div>
                             <p>请在左侧上传精灵图以开始预览</p>
-                            <p className="text-xs mt-2">格式要求：行1待机(4帧) / 行2受击(1帧) / 行3行走(4帧) / 行4攻击(5帧)</p>
+                            <p className="text-xs mt-2">格式要求：行1待机(4帧) / 行2攻击(5帧) / 行3行走(4帧) / 行4受击(1帧)</p>
                          </div>
                     )}
                     
@@ -322,6 +330,7 @@ const App: React.FC = () => {
                                     tolerance={tolerance}
                                     offsets={offsets[selectedAction] || []}
                                     removalMode={removalMode}
+                                    selectedFrame={selectedFrame}
                                 />
                             </div>
                         </div>

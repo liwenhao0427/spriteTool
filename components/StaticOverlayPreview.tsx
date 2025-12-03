@@ -9,6 +9,7 @@ interface StaticOverlayPreviewProps {
   tolerance: number;
   offsets: { x: number, y: number }[];
   removalMode: 'edge' | 'color';
+  selectedFrame: number;
 }
 
 const StaticOverlayPreview: React.FC<StaticOverlayPreviewProps> = ({
@@ -18,6 +19,7 @@ const StaticOverlayPreview: React.FC<StaticOverlayPreviewProps> = ({
   tolerance,
   offsets,
   removalMode,
+  selectedFrame
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -53,34 +55,48 @@ const StaticOverlayPreview: React.FC<StaticOverlayPreviewProps> = ({
     const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
     if (!tempCtx) return;
 
-    // 循环遍历动作的所有帧
-    for (let i = 0; i < actionData.frames; i++) {
-      tempCtx.clearRect(0, 0, frameWidth, frameHeight);
-
-      const srcX = i * frameWidth;
-      const srcY = actionData.row * frameHeight;
-      const offset = offsets[i] || { x: 0, y: 0 };
-
-      // 将带偏移的帧绘制到临时画布
-      tempCtx.drawImage(image, srcX, srcY, frameWidth, frameHeight, offset.x, offset.y, frameWidth, frameHeight);
-      
-      // 移除背景
-      if (bgColor) {
-        let imageData = tempCtx.getImageData(0, 0, frameWidth, frameHeight);
-        if (removalMode === 'edge') {
-          imageData = removeBackgroundByEdge(imageData, bgColor, tolerance);
-        } else {
-          imageData = removeBackgroundByColor(imageData, bgColor, tolerance);
+    const renderFrame = (frameIndex: number) => {
+        tempCtx.clearRect(0, 0, frameWidth, frameHeight);
+  
+        const srcX = frameIndex * frameWidth;
+        const srcY = actionData.row * frameHeight;
+        const offset = offsets[frameIndex] || { x: 0, y: 0 };
+  
+        // 将带偏移的帧绘制到临时画布
+        tempCtx.drawImage(image, srcX, srcY, frameWidth, frameHeight, offset.x, offset.y, frameWidth, frameHeight);
+        
+        // 移除背景
+        if (bgColor) {
+          let imageData = tempCtx.getImageData(0, 0, frameWidth, frameHeight);
+          if (removalMode === 'edge') {
+            imageData = removeBackgroundByEdge(imageData, bgColor, tolerance);
+          } else {
+            imageData = removeBackgroundByColor(imageData, bgColor, tolerance);
+          }
+          tempCtx.putImageData(imageData, 0, 0);
         }
-        tempCtx.putImageData(imageData, 0, 0);
-      }
-      
-      // 将处理后的帧绘制到主画布上
-      ctx.globalAlpha = 0.75; // 使用一点透明度以便观察重叠
-      ctx.drawImage(tempCanvas, 0, 0);
-      ctx.globalAlpha = 1.0;
+        
+        // 将处理后的帧绘制到主画布上
+        ctx.drawImage(tempCanvas, 0, 0);
+      };
+
+    // 1. 绘制虚化的其他帧
+    ctx.globalAlpha = 0.25;
+    for (let i = 0; i < actionData.frames; i++) {
+        if(i === selectedFrame) continue;
+        renderFrame(i);
     }
-  }, [image, selectedAction, bgColor, tolerance, offsets, removalMode]);
+    
+    // 2. 绘制高亮的当前帧
+    ctx.globalAlpha = 1.0;
+    if(actionData.frames > 0 && selectedFrame < actionData.frames) {
+        renderFrame(selectedFrame);
+    }
+
+    // 重置透明度
+    ctx.globalAlpha = 1.0;
+    
+  }, [image, selectedAction, bgColor, tolerance, offsets, removalMode, selectedFrame]);
 
   if (!image) {
     return null; // 如果没有图片则不渲染
@@ -92,7 +108,7 @@ const StaticOverlayPreview: React.FC<StaticOverlayPreviewProps> = ({
         <canvas ref={canvasRef} className="max-w-full h-auto object-contain" style={{ imageRendering: 'pixelated', maxHeight: '400px' }} />
       </div>
       <div className="text-xs text-slate-500 font-mono">
-        帧对齐预览 (重叠)
+        帧对齐预览 (选中帧: {selectedFrame + 1})
       </div>
     </div>
   );
